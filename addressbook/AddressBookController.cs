@@ -127,7 +127,6 @@ namespace addressbook
         {
             try
             {
-                MessageBox.Show($"{ppl.Nama};{ppl.Alamat};{ppl.Kota};{ppl.NoHP};{ppl.Tanggal.ToShortDateString()};{ppl.Email}");
                 dgv.Rows.Clear();
                 string[] fileContent = File.ReadAllLines(Properties.Settings.Default.NamaFile);
                 foreach (string line in fileContent)
