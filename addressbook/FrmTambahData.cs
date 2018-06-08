@@ -114,12 +114,12 @@ namespace addressbook
 
         private People initial_people(People p)
         {
-            p.Nama = this.txtNama.Text;
-            p.Alamat = this.txtAlamat.Text;
-            p.Kota = this.txtKota.Text;
-            p.NoHP = this.txtNoHP.Text;
+            p.Nama = this.txtNama.Text.Trim();
+            p.Alamat = this.txtAlamat.Text.Trim();
+            p.Kota = this.txtKota.Text.Trim();
+            p.NoHP = this.txtNoHP.Text.Trim();
             p.Tanggal = this.dtpTglLahir.Value;
-            p.Email = this.txtEmail.Text;
+            p.Email = this.txtEmail.Text.Trim();
 
             return p;
         }

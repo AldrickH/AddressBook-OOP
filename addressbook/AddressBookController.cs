@@ -123,6 +123,66 @@ namespace addressbook
             }
         }
 
+        public void filterData(DataGridView dgv, People ppl, Label lbl)
+        {
+            try
+            {
+                MessageBox.Show($"{ppl.Nama};{ppl.Alamat};{ppl.Kota};{ppl.NoHP};{ppl.Tanggal.ToShortDateString()};{ppl.Email}");
+                dgv.Rows.Clear();
+                string[] fileContent = File.ReadAllLines(Properties.Settings.Default.NamaFile);
+                foreach (string line in fileContent)
+                {
+                    bool benar = false;
+                    string[] arrItem = line.Split(';');
+                    if ((ppl.Nama != "" && arrItem[0].ToLower().Contains(ppl.Nama.ToLower().Trim()))
+                        || (ppl.Alamat != "" && arrItem[1].ToLower().Contains(ppl.Alamat.ToLower().Trim()))
+                        || (ppl.Kota != "" && arrItem[2].ToLower().Contains(ppl.Kota.ToLower().Trim()))
+                        || (ppl.NoHP != "" && arrItem[3].ToLower().Contains(ppl.NoHP.ToLower().Trim()))
+                        || (ppl.Tanggal.ToShortDateString() != "" && arrItem[4].ToLower().Contains(ppl.Tanggal.ToShortDateString()))
+                        || (ppl.Email != "" && arrItem[5].ToLower().Contains(ppl.Email.ToLower().Trim())))
+                    {
+                        DateTime tglDari, tglSampai;
+                        if (ppl.Tanggal.ToShortDateString().Trim().Contains("-"))
+                        {
+                            string[] arrTanggal = ppl.Tanggal.ToShortDateString().Split('-');
+                            if (!DateTime.TryParse(arrTanggal[0], out tglDari))
+                            {
+                                throw new Exception("Sorry, kriteria tanggal lahir tidak valid ...");
+                            }
+                            if (!DateTime.TryParse(arrTanggal[1], out tglSampai))
+                            {
+                                throw new Exception("Sorry, kriteria tanggal lahir tidak valid ...");
+                            }
+                        }
+                        else
+                        {
+                            if (!DateTime.TryParse(ppl.Tanggal.ToShortDateString(), out tglDari))
+                            {
+                                throw new Exception("Sorry, kriteria tanggal lahir tidak valid ...");
+                            }
+                            tglSampai = tglDari;
+                        }
+                        DateTime tglLahir = Convert.ToDateTime(arrItem[4]);
+                        if (tglLahir.Date >= tglDari.Date && tglLahir.Date <= tglSampai.Date) benar = true;
+                        benar = true;
+                    }
+                    if (benar)
+                    {
+                        dgv.Rows.Add(new string[] { arrItem[0], arrItem[1], arrItem[2], arrItem[3], arrItem[4], arrItem[5] });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Filter Data", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            finally
+            {
+                lbl.Text = $"{dgv.Rows.Count.ToString("n0")} Record data.";
+            }
+        }
+
+
         public bool EmailIsValid(string emailAddr)
         {
             string emailPattern1 = @"^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$";
