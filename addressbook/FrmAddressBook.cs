@@ -43,7 +43,7 @@ namespace addressbook
 
                 addr.loadData(this.dgvData, this.lblBanyakRecordData);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 MessageBox.Show("Data belum ada, tambah data terlebih dahulu", "Edit item", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }

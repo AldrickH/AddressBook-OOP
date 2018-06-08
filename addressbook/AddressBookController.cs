@@ -172,9 +172,9 @@ namespace addressbook
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                MessageBox.Show(ex.Message, "Filter Data", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("", "Filter Data", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             finally
             {
