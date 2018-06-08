@@ -19,6 +19,7 @@ namespace addressbook
         bool _addMode = false; // klo true = additem , false = edit item
         AddressBookController addr = new AddressBookController();
 
+
         public void Run()
         {
             this.ShowDialog();
