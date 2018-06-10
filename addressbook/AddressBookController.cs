@@ -9,7 +9,7 @@ using System.Text.RegularExpressions;
 
 namespace addressbook
 {
-    class AddressBookController
+    public class AddressBookController
     {
         public List<People> listData { get; set; }
 
@@ -34,64 +34,55 @@ namespace addressbook
             }
         }
 
-        public void loadData(DataGridView dgv, Label lbl)
+        public void insertData(bool mode, People ppl, People temp)
         {
             try
             {
-                dgv.Rows.Clear();
-                AddressBookController controller = new AddressBookController();
-                List<People> listData = controller.listData;
-                foreach (People ppl in listData)
+                if (mode)
                 {
-                    dgv.Rows.Add(new string[] { ppl.Nama, ppl.Alamat, ppl.Kota, ppl.NoHP, ppl.Tanggal.ToShortDateString(), ppl.Email });
+                    addData(ppl);
+                }
+                else // edit data
+                {
+                    editData(ppl, temp);
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message, "AddressBook", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-            finally
-            {
-                lbl.Text = $"{dgv.Rows.Count.ToString("n0")} Record data.";
-            }
         }
 
-        public void saveData(bool mode, People ppl, People temp)
+        private void addData(People ppl)
         {
             try
             {
-                if (mode)
+                if (itemExist(ppl)) throw new Exception("Sorry, you can't add a same data");
+                listData.Add(ppl);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Add data", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void editData(People ppl, People temp)
+        {
+            try
+            {
+                if (itemExist(temp))
                 {
-                    using (var fs = new FileStream(Properties.Settings.Default.NamaFile, FileMode.Append, FileAccess.Write))
+                    for (int i = 0; i < listData.Count; i++)
                     {
-                        using (StreamWriter writer = new StreamWriter(fs))
+                        People data = listData[i];
+                        if (data.Nama.ToLower().Equals(temp.Nama.ToLower()) && data.Alamat.ToLower().Equals(temp.Alamat.ToLower()) &&
+                            data.Kota.ToLower().Equals(temp.Kota.ToLower()) && data.NoHP.ToLower().Equals(temp.NoHP.ToLower()) &&
+                            data.Tanggal.ToShortDateString().Equals(temp.Tanggal.ToShortDateString()) && data.Email.ToLower().Equals(temp.Email.ToLower()))
                         {
-                            writer.WriteLine($"{ppl.Nama};{ppl.Alamat};{ppl.Kota};{ppl.NoHP};{ppl.Tanggal.ToShortDateString()};{ppl.Email}"); // nama;alamat, ....
+                            listData[i] = ppl;
+                            break;
                         }
                     }
-                }
-                else // edit data
-                {
-                    string[] line = File.ReadAllLines(Properties.Settings.Default.NamaFile);
-                    using (var fs = new FileStream("temporary.csv", FileMode.Create, FileAccess.ReadWrite))
-                    {
-                        using (StreamWriter writer = new StreamWriter(fs))
-                        {
-                            for (int i = 0; i < line.Length; i++)
-                            {
-                                if (line[i] == $"{temp.Nama};{temp.Alamat};{temp.Kota};{temp.NoHP};{temp.Tanggal.ToShortDateString()};{temp.Email}")
-                                {
-                                    writer.WriteLine($"{ppl.Nama};{ppl.Alamat};{ppl.Kota};{ppl.NoHP};{ppl.Tanggal.ToShortDateString()};{ppl.Email}");
-                                }
-                                else
-                                {
-                                    writer.WriteLine(line[i]);
-                                }
-                            }
-                        }
-                    }
-                    File.Delete(Properties.Settings.Default.NamaFile);
-                    File.Move("temporary.csv", Properties.Settings.Default.NamaFile);
                 }
             }
             catch (Exception ex)
@@ -102,85 +93,136 @@ namespace addressbook
 
         public void deleteData(People ppl)
         {
-            if (MessageBox.Show("Hapus Baris Data Terpilih ? ", "Delete Data", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            try
             {
-                string[] line = File.ReadAllLines(Properties.Settings.Default.NamaFile);
-                using (var fs = new FileStream("temporary.csv", FileMode.Create, FileAccess.ReadWrite))
+                if (itemExist(ppl))
                 {
-                    using (StreamWriter writer = new StreamWriter(fs))
+                    People dataToDelete = null;
+                    for (int i = 0; i < listData.Count; i++)
                     {
-                        for (int i = 0; i < line.Length; i++)
+                        dataToDelete = listData[i];
+                        if (dataToDelete.Nama.ToLower().Equals(ppl.Nama.ToLower()) && dataToDelete.Alamat.ToLower().Equals(ppl.Alamat.ToLower()) &&
+                            dataToDelete.Kota.ToLower().Equals(ppl.Kota.ToLower()) && dataToDelete.NoHP.ToLower().Equals(ppl.NoHP.ToLower()) &&
+                            dataToDelete.Tanggal.ToShortDateString().Equals(ppl.Tanggal.ToShortDateString()) && dataToDelete.Email.ToLower().Equals(ppl.Email.ToLower()))
                         {
-                            if (line[i] != $"{ppl.Nama};{ppl.Alamat};{ppl.Kota};{ppl.NoHP};{ppl.Tanggal.ToShortDateString()};{ppl.Email}")
-                            {
-                                writer.WriteLine(line[i]);
-                            }
+                            break;
                         }
                     }
-                    File.Delete(Properties.Settings.Default.NamaFile);
-                    File.Move("temporary.csv", Properties.Settings.Default.NamaFile);
+                    if (dataToDelete != null) listData.Remove(dataToDelete);
                 }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
             }
         }
 
-        public void filterData(DataGridView dgv, People ppl, Label lbl)
+        public void saveData()
         {
             try
             {
-                dgv.Rows.Clear();
-                string[] fileContent = File.ReadAllLines(Properties.Settings.Default.NamaFile);
-                foreach (string line in fileContent)
+                using (FileStream fs = new FileStream("temporary.csv", FileMode.Create, FileAccess.Write))
                 {
-                    bool benar = false;
-                    string[] arrItem = line.Split(';');
-                    if ((ppl.Nama != "" && arrItem[0].ToLower().Contains(ppl.Nama.ToLower().Trim()))
-                        || (ppl.Alamat != "" && arrItem[1].ToLower().Contains(ppl.Alamat.ToLower().Trim()))
-                        || (ppl.Kota != "" && arrItem[2].ToLower().Contains(ppl.Kota.ToLower().Trim()))
-                        || (ppl.NoHP != "" && arrItem[3].ToLower().Contains(ppl.NoHP.ToLower().Trim()))
-                        || (ppl.Tanggal.ToShortDateString() != "" && arrItem[4].ToLower().Contains(ppl.Tanggal.ToShortDateString()))
-                        || (ppl.Email != "" && arrItem[5].ToLower().Contains(ppl.Email.ToLower().Trim())))
+                    using (StreamWriter writer = new StreamWriter(fs))
                     {
-                        DateTime tglDari, tglSampai;
-                        if (ppl.Tanggal.ToShortDateString().Trim().Contains("-"))
+                        foreach (People ppl in listData)
                         {
-                            string[] arrTanggal = ppl.Tanggal.ToShortDateString().Split('-');
-                            if (!DateTime.TryParse(arrTanggal[0], out tglDari))
-                            {
-                                throw new Exception("Sorry, kriteria tanggal lahir tidak valid ...");
-                            }
-                            if (!DateTime.TryParse(arrTanggal[1], out tglSampai))
-                            {
-                                throw new Exception("Sorry, kriteria tanggal lahir tidak valid ...");
-                            }
+                            writer.WriteLine($"{ppl.Nama};{ppl.Alamat};{ppl.Kota};{ppl.NoHP};{ppl.Tanggal.ToShortDateString()};{ppl.Email}");
                         }
-                        else
-                        {
-                            if (!DateTime.TryParse(ppl.Tanggal.ToShortDateString(), out tglDari))
-                            {
-                                throw new Exception("Sorry, kriteria tanggal lahir tidak valid ...");
-                            }
-                            tglSampai = tglDari;
-                        }
-                        DateTime tglLahir = Convert.ToDateTime(arrItem[4]);
-                        if (tglLahir.Date >= tglDari.Date && tglLahir.Date <= tglSampai.Date) benar = true;
-                        benar = true;
-                    }
-                    if (benar)
-                    {
-                        dgv.Rows.Add(new string[] { arrItem[0], arrItem[1], arrItem[2], arrItem[3], arrItem[4], arrItem[5] });
                     }
                 }
+                if (File.Exists(Properties.Settings.Default.NamaFile)) File.Delete(Properties.Settings.Default.NamaFile);
+                File.Move("temporary.csv", Properties.Settings.Default.NamaFile);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                MessageBox.Show("", "Filter Data", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-            finally
-            {
-                lbl.Text = $"{dgv.Rows.Count.ToString("n0")} Record data.";
+                throw ex;
             }
         }
 
+        public List<People> filterData(string nama = "", string alamat = "", string kota = "", string noHp = "", string tglLahir = "", string email = "")
+        {
+            List<People> listQuery = null;
+            try
+            {
+                if (nama != "" || alamat != "" || kota != "" || noHp != "" || tglLahir != "" || email != "")
+                {
+                    if (listData?.Count > 0)
+                    {
+                        listQuery = new List<People>();
+                        foreach (People data in listData)
+                        {
+                            bool benar = false;
+                            if ((nama != "" && data.Nama.ToLower().Contains(nama.ToLower().Trim()))
+                        || (alamat != "" && data.Alamat.ToLower().Contains(alamat.ToLower().Trim()))
+                        || (kota != "" && data.Kota.ToLower().Contains(kota.ToLower().Trim()))
+                        || (noHp != "" && data.NoHP.ToLower().Contains(noHp.ToLower().Trim()))
+                        || (email != "" && data.Email.ToLower().Contains(email.ToLower().Trim())))
+                            {
+                                if (tglLahir != "")
+                                {
+                                    DateTime tglDari, tglSampai;
+                                    if (tglLahir.Contains("-"))
+                                    {
+                                        string[] arrTanggal = tglLahir.Split('-');
+                                        if (!DateTime.TryParse(arrTanggal[0], out tglDari))
+                                        {
+                                            throw new Exception("Sorry, kriteria tanggal lahir tidak valid ...");
+                                        }
+                                        if (!DateTime.TryParse(arrTanggal[1], out tglSampai))
+                                        {
+                                            throw new Exception("Sorry, kriteria tanggal lahir tidak valid ...");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (!DateTime.TryParse(tglLahir, out tglDari))
+                                        {
+                                            throw new Exception("Sorry, kriteria tanggal lahir tidak valid ...");
+                                        }
+                                        tglSampai = tglDari;
+                                    }
+                                    if (data.Tanggal.Date >= tglDari.Date && data.Tanggal.Date <= tglSampai.Date) benar = true;
+                                }
+                                benar = true;
+                            }
+                            if (benar)
+                            {
+                                listQuery.Add(data);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    if (listData?.Count > 0) listQuery = listData;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            return listQuery;
+        }
+
+        private bool itemExist(People temp)
+        {
+            if (listData?.Count > 0)
+            {
+                foreach (People data in listData)
+                {
+                    if (data.Nama.ToLower().Equals(temp.Nama.ToLower().Trim()) &&
+                        data.Alamat.ToLower().Equals(temp.Alamat.ToLower().Trim()) &&
+                        data.Kota.ToLower().Equals(temp.Kota.ToLower().Trim()) &&
+                        data.NoHP.ToLower().Equals(temp.NoHP.ToLower().Trim()) &&
+                        data.Tanggal.ToShortDateString().Equals(temp.Tanggal.ToShortDateString()) &&
+                        data.Email.ToLower().Equals(temp.Email.ToLower().Trim())
+                        )
+                        return true;
+                }
+            }
+            return false;
+        }
 
         public bool EmailIsValid(string emailAddr)
         {

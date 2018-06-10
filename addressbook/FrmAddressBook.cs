@@ -14,34 +14,56 @@ namespace addressbook
     public partial class FrmAddressBook : Form
     {
         People p = new People();
-        AddressBookController addr = new AddressBookController();
+        AddressBookController controller = new AddressBookController();
 
         public FrmAddressBook()
         {
             InitializeComponent();
+            this.dgvData.AutoGenerateColumns = false;
         }
 
         private void FrmAddressBook_Load(object sender, EventArgs e)
         {
-            addr.loadData(this.dgvData, this.lblBanyakRecordData);
+            try
+            {
+                this.dgvData.DataSource = controller.listData;
+                this.dgvData.Columns[0].DataPropertyName = "Nama";
+                this.dgvData.Columns[1].DataPropertyName = "Alamat";
+                this.dgvData.Columns[2].DataPropertyName = "Kota";
+                this.dgvData.Columns[3].DataPropertyName = "NoHP";
+                this.dgvData.Columns[4].DataPropertyName = "Tanggal";
+                this.dgvData.Columns[4].DefaultCellStyle.Format = "dd/MM/yyyy";
+                this.dgvData.Columns[5].DataPropertyName = "Email";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, this.Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            finally
+            {
+                this.lblBanyakRecordData.Text = $"{this.dgvData.Rows.Count.ToString("n0")} Record.";
+            }
         }
 
         private void btnTambah_Click(object sender, EventArgs e)
         {
-            FrmTambahData frm = new FrmTambahData(true);
+            FrmTambahData frm = new FrmTambahData(controller, true);
             frm.Run();
+            this.dgvData.DataSource = null;
+            this.dgvData.DataSource = controller.listData;
+            this.btnFilter_Click(null, null);
 
-            addr.loadData(this.dgvData, this.lblBanyakRecordData);
         }
 
         private void btnEdit_Click(object sender, EventArgs e)
         {
             try
             {
-                FrmTambahData frm = new FrmTambahData(false, initial_people(p, true));
+                FrmTambahData frm = new FrmTambahData(controller, false, initial_people(p));
                 frm.Run();
-
-                addr.loadData(this.dgvData, this.lblBanyakRecordData);
+                this.dgvData.DataSource = null;
+                this.dgvData.DataSource = controller.listData;
+                this.btnFilter_Click(null, null);
             }
             catch (Exception)
             {
@@ -56,43 +78,50 @@ namespace addressbook
 
         private void btnFilter_Click(object sender, EventArgs e)
         {
-            if (this.txtNama.Text.Trim() != "" || this.txtAlamat.Text.Trim() != "" || this.txtKota.Text.Trim() != "" || this.txtNoHP.Text.Trim() != "" || this.txtTglLahir.Text.Trim() != "" || this.txtEmail.Text.Trim() != "")
+            if (controller?.listData.Count > 0)
             {
-                addr.filterData(this.dgvData, initial_people(p, false), this.lblBanyakRecordData);
-            }
-            else
-            {
-                addr.loadData(this.dgvData, this.lblBanyakRecordData);
+                try
+                {
+                    this.dgvData.DataSource = null;
+                    var listQuery = controller.filterData(this.txtNama.Text.Trim(), this.txtAlamat.Text.Trim(), this.txtKota.Text.Trim(), this.txtNoHP.Text.Trim(), this.txtTglLahir.Text.Trim(), this.txtEmail.Text.Trim());
+                    this.dgvData.DataSource = listQuery;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, this.Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                finally
+                {
+                    this.lblBanyakRecordData.Text = $"{this.dgvData.Rows.Count.ToString("n0")} Record.";
+                }
             }
         }
 
         private void btnHapus_Click(object sender, EventArgs e)
         {
-            addr.deleteData(initial_people(p, true));
-            addr.loadData(this.dgvData, this.lblBanyakRecordData);
+            if (this.dgvData.SelectedRows.Count > 0 && MessageBox.Show("Hapus data terpilih ? ", this.Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            {
+                controller.deleteData(initial_people(p));
+                this.btnFilter_Click(null, null);
+            }
         }
 
-        private People initial_people(People p, bool mode)
+        private void FrmAddressBook_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (mode)
+            if (MessageBox.Show("Save data ? ", this.Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
-                p.Nama = dgvData.CurrentRow.Cells[0].Value.ToString();
-                p.Alamat = dgvData.CurrentRow.Cells[1].Value.ToString();
-                p.Kota = dgvData.CurrentRow.Cells[2].Value.ToString();
-                p.NoHP = dgvData.CurrentRow.Cells[3].Value.ToString();
-                p.Tanggal = Convert.ToDateTime(dgvData.CurrentRow.Cells[4].Value).Date;
-                p.Email = dgvData.CurrentRow.Cells[5].Value.ToString();
+                controller.saveData();
             }
-            else
-            {
-                p.Nama = this.txtNama.Text.Trim();
-                p.Alamat = this.txtAlamat.Text.Trim();
-                p.Kota = this.txtKota.Text.Trim();
-                p.NoHP = this.txtNoHP.Text.Trim();
-                if(this.txtTglLahir.Text.Trim() != "")
-                p.Tanggal = Convert.ToDateTime(this.txtTglLahir.Text.Trim());
-                p.Email = this.txtEmail.Text.Trim();
-            }
+        }
+
+        private People initial_people(People p)
+        {
+            p.Nama = dgvData.CurrentRow.Cells[0].Value.ToString();
+            p.Alamat = dgvData.CurrentRow.Cells[1].Value.ToString();
+            p.Kota = dgvData.CurrentRow.Cells[2].Value.ToString();
+            p.NoHP = dgvData.CurrentRow.Cells[3].Value.ToString();
+            p.Tanggal = Convert.ToDateTime(dgvData.CurrentRow.Cells[4].Value).Date;
+            p.Email = dgvData.CurrentRow.Cells[5].Value.ToString();
 
             return p;
         }

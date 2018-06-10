@@ -17,18 +17,18 @@ namespace addressbook
         People temp = null;
         People p_New = new People();
         bool _addMode = false; // klo true = additem , false = edit item
-        AddressBookController addr = new AddressBookController();
-
+        AddressBookController controller = null;
 
         public void Run()
         {
             this.ShowDialog();
         }
 
-        public FrmTambahData(bool addMode, People ppl = null)
+        public FrmTambahData(AddressBookController cntrl, bool addMode, People ppl = null)
         {
             InitializeComponent();
             _addMode = addMode;
+            controller = cntrl;
 
             if (ppl != null)
             {
@@ -76,8 +76,8 @@ namespace addressbook
                 this.txtEmail.Focus();
             }
             else
-            { 
-                addr.saveData(_addMode,initial_people(p_New), temp);
+            {
+                controller.insertData(_addMode, initial_people(p_New), temp);
                 this.Close();
             }
         }
@@ -91,7 +91,7 @@ namespace addressbook
         {
             if (this.txtEmail.Text.Trim() != "")
             {
-                if (!addr.EmailIsValid(this.txtEmail.Text))
+                if (!controller.EmailIsValid(this.txtEmail.Text))
                 {
                     MessageBox.Show("Sorry, data email tidak valid ...", this.Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     this.txtEmail.Clear();

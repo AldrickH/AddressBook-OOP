@@ -323,6 +323,7 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Address book";
             this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FrmAddressBook_FormClosing);
             this.Load += new System.EventHandler(this.FrmAddressBook_Load);
             this.toolStrip1.ResumeLayout(false);
             this.toolStrip1.PerformLayout();
